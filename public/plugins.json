@@ -1,0 +1,8 @@
+[
+  {
+    "name": "MyPlugin",
+    "description": "Plugin de ejemplo",
+    "version": "0.0.1",
+    "url": "http://localhost:5002/my-lib.js"
+  }
+]
