@@ -79,7 +79,7 @@ function App() {
   const [messages, setMessages] = useState<string[]>([]);
 
   useEffect(() => {
-    async function init() {
+    async function initWs() {
       try {
         const nc = await connect({ servers: "ws://localhost:9222" });
         const sc = StringCodec();
@@ -101,7 +101,8 @@ function App() {
         console.error("Error al conectar con NATS:", err);
       }
     }
-    init();
+
+    // initWs();
   }, []);
 
   return (
