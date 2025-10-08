@@ -254,8 +254,14 @@ function Deal() {
   } = useDealStore();
   const [searchTerm, setSearchTerm] = useState("");
 
-  const handleSetDeal = async (id: string, name: string, email: string) => {
-    await setDeal(id, name, email);
+  const handleSetDeal = async (
+    id: string,
+    step: number,
+    data: Record<string, any>,
+    req: Record<string, any>,
+    pinnedData: Record<string, any>
+  ) => {
+    await setDeal(id, step, data, req, pinnedData);
   };
 
   const handleSearchDeal = async (e: React.FormEvent) => {
@@ -268,7 +274,7 @@ function Deal() {
     const deal = await getDeal(id);
     if (deal) {
       alert(
-        `📄 Deal:\n\nID: ${deal.id}\nNombre: ${deal.name}\nEmail: ${deal.email}`
+        `📄 Deal:\n\nID: ${deal.id}\nCode: ${deal.code}\nTitle: ${deal.title}\nSubtitle: ${deal.subtitle}\nUser ID: ${deal.userId}`
       );
     } else {
       alert("Deal no encontrado");
@@ -288,9 +294,7 @@ function Deal() {
 
         <button
           className="px-4 py-2 bg-blue-500 text-white rounded mr-2"
-          onClick={() =>
-            handleSetDeal("", "César", `cesar${deals.length}@example.com`)
-          }
+          onClick={() => handleSetDeal("", 1, { name: "César" }, {}, {})}
         >
           Añadir deals
         </button>
@@ -328,8 +332,8 @@ function Deal() {
         {deals.map((deal) => (
           <li key={deal.id} className="flex justify-between items-center py-2">
             <div>
-              <p className="font-semibold">{deal.name}</p>
-              <p className="text-sm text-gray-600">{deal.email}</p>
+              <p className="font-semibold">{deal.code}</p>
+              <p className="text-sm text-gray-600">{deal.title}</p>
             </div>
             <div className="flex gap-2">
               <button
