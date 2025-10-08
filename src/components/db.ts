@@ -2,7 +2,7 @@ import { enviroment } from "@/components/enviroment";
 import { openDB, type IDBPDatabase } from "idb";
 
 const DB_NAME = enviroment.DbName;
-const DB_VERSION = enviroment.DbVersion;
+let DB_VERSION = enviroment.DbVersion;
 
 interface StoreDefinition {
   keyPath: string;
@@ -26,6 +26,15 @@ export function ensureStore(
   storeName: string,
   definition: StoreDefinition
 ): void {
+  const hasFulltextIndex = definition.indexes?.some(
+    (idx) => idx.name === "__fulltext"
+  );
+  if (!hasFulltextIndex) {
+    definition.indexes = [
+      ...(definition.indexes ?? []),
+      { name: "__fulltext", keyPath: "__fulltext" },
+    ];
+  }
   storesToEnsure[storeName] = definition;
 }
 
@@ -54,12 +63,40 @@ async function getDB(): Promise<IDBPDatabase> {
 }
 
 /**
+ * Genera el campo __fulltext concatenando todos los valores stringificables del objeto.
+ */
+function buildFullText(obj: any, excludeKey?: string): string {
+  const values: string[] = [];
+
+  function recurse(o: any, _parentKey?: string) {
+    if (o == null) return;
+
+    if (typeof o === "object") {
+      for (const [key, val] of Object.entries(o)) {
+        if (key === excludeKey) continue;
+        recurse(val, key);
+      }
+    } else if (["string", "number", "boolean"].includes(typeof o)) {
+      values.push(String(o));
+    }
+  }
+
+  recurse(obj);
+  return values.join("|").toLowerCase();
+}
+
+/**
  * Inserta o actualiza un registro.
  */
 export async function setToDB<T>(
   storeName: string,
   value: T
 ): Promise<IDBValidKey> {
+  const storeDef = storesToEnsure[storeName];
+  const keyToExclude = storeDef?.keyPath;
+
+  (value as any).__fulltext = buildFullText(value, keyToExclude);
+
   const db = await getDB();
   return db.put(storeName, value);
 }
@@ -100,12 +137,16 @@ export async function clearStore(storeName: string): Promise<void> {
 export async function queryFromDB<T>(
   storeName: string,
   filter: QueryFilter,
-  indexName?: string
+  indexName?: string,
+  options?: { page?: number; rows?: number }
 ): Promise<T[]> {
   const db = await getDB();
   const tx = db.transaction(storeName, "readonly");
   const store = tx.objectStore(storeName);
   const source = indexName ? store.index(indexName) : store;
+  const page = options?.page ?? 1;
+  const rows = options?.rows ?? 30;
+  const offset = (page - 1) * rows;
 
   if (filter.type === "like") {
     const searchValue = filter.value.toLowerCase();
@@ -113,7 +154,12 @@ export async function queryFromDB<T>(
 
     const results: T[] = [];
     let cursor = await source.openCursor();
-    while (cursor) {
+
+    if (cursor && offset > 0) {
+      await cursor.advance(offset);
+    }
+
+    while (cursor && results.length < rows) {
       const value = cursor.value as any;
       let fieldValue: string;
 
@@ -122,7 +168,6 @@ export async function queryFromDB<T>(
       } else if (indexName) {
         fieldValue = String(cursor.key).toLowerCase();
       } else {
-        // fallback: intentar usar keyPath principal
         fieldValue = String(cursor.key).toLowerCase();
       }
 
@@ -163,11 +208,31 @@ export async function queryFromDB<T>(
 
   const results: T[] = [];
   let cursor = await source.openCursor(range);
-  while (cursor) {
+
+  if (cursor && offset > 0) {
+    await cursor.advance(offset);
+  }
+
+  while (cursor && results.length < rows) {
     results.push(cursor.value as T);
     cursor = await cursor.continue();
   }
 
   await tx.done;
   return results;
+}
+
+/**
+ * Busca registros en un store utilizando el índice __fulltext.
+ */
+export async function searchFromDB<T>(
+  storeName: string,
+  value: string,
+  page: number = 1,
+  rows: number = 30
+): Promise<T[]> {
+  return queryFromDB(storeName, { type: "like", value }, "__fulltext", {
+    page,
+    rows,
+  });
 }

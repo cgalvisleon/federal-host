@@ -17,11 +17,17 @@ export interface User {
 
 interface UserState {
   users: User[];
-  loading: boolean;
+  loadingUsers: boolean;
   setUser: (id: string, name: string, email: string) => Promise<void>;
   getUser: (id: string) => Promise<User | undefined>;
   deleteUser: (id: string) => Promise<void>;
-  queryUsers: () => Promise<void>;
+  queryUsers: (
+    field: string,
+    value: string,
+    page?: number,
+    rows?: number
+  ) => Promise<void>;
+  searchUser: (value: string, page?: number, rows?: number) => Promise<void>;
   clearUsers: () => Promise<void>;
 }
 
@@ -36,7 +42,7 @@ ensureStore(STORE_NAME, {
 export const useUserStore = create<UserState>((set) => {
   const store: UserState = {
     users: [],
-    loading: false,
+    loadingUsers: false,
 
     setUser: async (id, name, email) => {
       if (id == "") {
@@ -57,13 +63,45 @@ export const useUserStore = create<UserState>((set) => {
       set((state) => ({ users: state.users.filter((user) => user.id !== id) }));
     },
 
-    queryUsers: async () => {
-      set({ loading: true });
-      const stored = await queryFromDB<User>(STORE_NAME, {
-        type: "moreEq",
-        value: "",
-      });
-      set({ users: stored, loading: false });
+    queryUsers: async (
+      field: string,
+      value: string,
+      page?: number,
+      rows?: number
+    ) => {
+      set({ loadingUsers: true });
+      const stored = await queryFromDB<User>(
+        STORE_NAME,
+        {
+          type: "like",
+          field: field,
+          value: value,
+        },
+        undefined,
+        {
+          page: page,
+          rows: rows,
+        }
+      );
+      set({ users: stored, loadingUsers: false });
+    },
+
+    searchUser: async (value: string, page?: number, rows?: number) => {
+      set({ loadingUsers: true });
+      const stored = await queryFromDB<User>(
+        STORE_NAME,
+        {
+          type: "like",
+          field: "__fulltext",
+          value: value,
+        },
+        "__fulltext",
+        {
+          page: page,
+          rows: rows,
+        }
+      );
+      set({ users: stored, loadingUsers: false });
     },
 
     clearUsers: async () => {

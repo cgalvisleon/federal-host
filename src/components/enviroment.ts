@@ -9,5 +9,5 @@ export const enviroment = {
   ProjectId: import.meta.env.VITE_PROJECT_ID ?? "-1",
   TokenTest: import.meta.env.VITE_TOKENT_TEST ?? "",
   DbName: import.meta.env.VITE_DB_NAME ?? "myAppDB",
-  DbVersion: import.meta.env.VITE_DB_VERSION ?? "1",
+  DbVersion: Number(import.meta.env.VITE_DB_VERSION ?? 1),
 };

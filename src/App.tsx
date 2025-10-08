@@ -4,6 +4,7 @@ import "@/styles/App.css";
 import { connect, StringCodec } from "nats.ws";
 import React, { useEffect, useState } from "react";
 import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
+import { useDealStore } from "./store/dealAppStore";
 
 function PluginRoutes() {
   const { plugins } = usePluginRegistry();
@@ -78,7 +79,6 @@ function App() {
   const { getComponentByTag } = usePluginRegistry();
   const Hello = getComponentByTag("MyPlugin.HelloPlugin");
   const [messages, setMessages] = useState<string[]>([]);
-  const { users, setUser, clearUsers, loading } = useUserStore();
 
   useEffect(() => {
     async function initWs() {
@@ -113,36 +113,8 @@ function App() {
       <Navigation />
       <PluginRoutes />
       <Hello />
-      <div className="p-4">
-        <h1 className="text-xl font-bold">Zustand + IndexedDB (Auto)</h1>
-
-        <button
-          className="px-4 py-2 bg-blue-500 text-white rounded mr-2"
-          onClick={() =>
-            setUser("", "César", `cesar${users.length}@example.com`)
-          }
-        >
-          Añadir usuario
-        </button>
-
-        <button
-          className="px-4 py-2 bg-red-500 text-white rounded"
-          onClick={clearUsers}
-        >
-          Limpiar
-        </button>
-
-        {loading && <p>Cargando usuarios...</p>}
-
-        <ul className="mt-4">
-          {users.map((u) => (
-            <li key={u.id}>
-              {u.name} — {u.email}
-            </li>
-          ))}
-        </ul>
-      </div>
-      {/*  */}
+      <User />
+      <Deal />
       <div>
         <h1>Mensajes de NATS</h1>
         <ul>
@@ -156,3 +128,226 @@ function App() {
 }
 
 export default App;
+
+function User() {
+  const {
+    users,
+    setUser,
+    clearUsers,
+    loadingUsers,
+    getUser,
+    deleteUser,
+    searchUser,
+  } = useUserStore();
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const handleSetUser = async (id: string, name: string, email: string) => {
+    await setUser(id, name, email);
+  };
+
+  const handleSearchUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log(searchTerm);
+    await searchUser(searchTerm, 1, 20);
+  };
+
+  const handleGetUser = async (id: string) => {
+    const user = await getUser(id);
+    if (user) {
+      alert(
+        `📄 Usuario:\n\nID: ${user.id}\nNombre: ${user.name}\nEmail: ${user.email}`
+      );
+    } else {
+      alert("Usuario no encontrado");
+    }
+  };
+
+  const handleDeleteUser = async (id: string) => {
+    if (confirm("¿Seguro que deseas eliminar este usuario?")) {
+      await deleteUser(id);
+    }
+  };
+
+  return (
+    <div className="p-4 max-w-2xl mx-auto">
+      <div className="p-4">
+        <h1 className="text-xl font-bold">Zustand + IndexedDB (Auto)</h1>
+
+        <button
+          className="px-4 py-2 bg-blue-500 text-white rounded mr-2"
+          onClick={() =>
+            handleSetUser("", "César", `cesar${users.length}@example.com`)
+          }
+        >
+          Añadir usuario
+        </button>
+
+        <button
+          className="px-4 py-2 bg-red-500 text-white rounded"
+          onClick={clearUsers}
+        >
+          Limpiar
+        </button>
+      </div>
+      {/* 🔍 Formulario de búsqueda */}
+      <form onSubmit={handleSearchUser} className="flex gap-2 mb-4">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Buscar usuarios..."
+          className="flex-1 border rounded p-2"
+        />
+        <button
+          type="submit"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          Buscar
+        </button>
+      </form>
+
+      {/* ⏳ Loading */}
+      {loadingUsers && <p className="text-gray-500">Cargando...</p>}
+
+      {/* 📋 Lista de usuarios */}
+      {!loadingUsers && users.length === 0 && (
+        <p className="text-gray-500">No se encontraron usuarios.</p>
+      )}
+
+      <ul className="divide-y divide-gray-200">
+        {users.map((user) => (
+          <li key={user.id} className="flex justify-between items-center py-2">
+            <div>
+              <p className="font-semibold">{user.name}</p>
+              <p className="text-sm text-gray-600">{user.email}</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleGetUser(user.id)}
+                className="text-blue-600 hover:underline"
+              >
+                Ver
+              </button>
+              <button
+                onClick={() => handleDeleteUser(user.id)}
+                className="text-red-600 hover:underline"
+              >
+                Eliminar
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function Deal() {
+  const {
+    deals,
+    setDeal,
+    clearDeals,
+    loadingDeals,
+    getDeal,
+    deleteDeal,
+    searchDeal,
+  } = useDealStore();
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const handleSetDeal = async (id: string, name: string, email: string) => {
+    await setDeal(id, name, email);
+  };
+
+  const handleSearchDeal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log(searchTerm);
+    await searchDeal(searchTerm, 1, 20);
+  };
+
+  const handleGetDeal = async (id: string) => {
+    const deal = await getDeal(id);
+    if (deal) {
+      alert(
+        `📄 Deal:\n\nID: ${deal.id}\nNombre: ${deal.name}\nEmail: ${deal.email}`
+      );
+    } else {
+      alert("Deal no encontrado");
+    }
+  };
+
+  const handleDeleteDeal = async (id: string) => {
+    if (confirm("¿Seguro que deseas eliminar este deal?")) {
+      await deleteDeal(id);
+    }
+  };
+
+  return (
+    <div className="p-4 max-w-2xl mx-auto">
+      <div className="p-4">
+        <h1 className="text-xl font-bold">Zustand + IndexedDB (Auto)</h1>
+
+        <button
+          className="px-4 py-2 bg-blue-500 text-white rounded mr-2"
+          onClick={() =>
+            handleSetDeal("", "César", `cesar${deals.length}@example.com`)
+          }
+        >
+          Añadir deals
+        </button>
+
+        <button
+          className="px-4 py-2 bg-red-500 text-white rounded"
+          onClick={clearDeals}
+        >
+          Limpiar
+        </button>
+      </div>
+      <form onSubmit={handleSearchDeal} className="flex gap-2 mb-4">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Buscar usuarios..."
+          className="flex-1 border rounded p-2"
+        />
+        <button
+          type="submit"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          Buscar
+        </button>
+      </form>
+
+      {loadingDeals && <p className="text-gray-500">Cargando...</p>}
+
+      {!loadingDeals && deals.length === 0 && (
+        <p className="text-gray-500">No se encontraron usuarios.</p>
+      )}
+
+      <ul className="divide-y divide-gray-200">
+        {deals.map((deal) => (
+          <li key={deal.id} className="flex justify-between items-center py-2">
+            <div>
+              <p className="font-semibold">{deal.name}</p>
+              <p className="text-sm text-gray-600">{deal.email}</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleGetDeal(deal.id)}
+                className="text-blue-600 hover:underline"
+              >
+                Ver
+              </button>
+              <button
+                onClick={() => handleDeleteDeal(deal.id)}
+                className="text-red-600 hover:underline"
+              >
+                Eliminar
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
