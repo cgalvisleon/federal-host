@@ -1,4 +1,5 @@
 import { loadPlugin, usePluginRegistry } from "@/plugins/registry";
+import { useUserStore } from "@/store/useAppStore";
 import "@/styles/App.css";
 import { connect, StringCodec } from "nats.ws";
 import React, { useEffect, useState } from "react";
@@ -77,6 +78,7 @@ function App() {
   const { getComponentByTag } = usePluginRegistry();
   const Hello = getComponentByTag("MyPlugin.HelloPlugin");
   const [messages, setMessages] = useState<string[]>([]);
+  const { users, setUser, clearUsers, loading } = useUserStore();
 
   useEffect(() => {
     async function initWs() {
@@ -105,12 +107,49 @@ function App() {
     // initWs();
   }, []);
 
+  const handleSetUser = async () => {
+    await setUser("César", "cesar@cesar.com");
+    // await setUser("César", "cesar@galvis.com");
+  };
+
+  const handleClearUsers = async () => {
+    await clearUsers();
+  };
+
   return (
     <BrowserRouter>
       <PluginsLoader />
       <Navigation />
       <PluginRoutes />
       <Hello />
+      <div className="p-4">
+        <h1 className="text-xl font-bold">Zustand + IndexedDB (Auto)</h1>
+
+        <button
+          className="px-4 py-2 bg-blue-500 text-white rounded mr-2"
+          onClick={() => setUser("César", `cesar${users.length}@example.com`)}
+        >
+          Añadir usuario
+        </button>
+
+        <button
+          className="px-4 py-2 bg-red-500 text-white rounded"
+          onClick={clearUsers}
+        >
+          Limpiar
+        </button>
+
+        {loading && <p>Cargando usuarios...</p>}
+
+        <ul className="mt-4">
+          {users.map((u) => (
+            <li key={u.id}>
+              {u.name} — {u.email}
+            </li>
+          ))}
+        </ul>
+      </div>
+      {/*  */}
       <div>
         <h1>Mensajes de NATS</h1>
         <ul>

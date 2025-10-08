@@ -12,7 +12,8 @@ interface StoreDefinition {
 type QueryFilter =
   | { type: "exact"; value: any }
   | { type: "prefix"; value: string }
-  | { type: "gte" | "lte" | "gt" | "lt"; value: any };
+  | { type: "gte" | "lte" | "gt" | "lt"; value: any }
+  | { type: "contains"; value: string; field?: string };
 
 let dbPromise: Promise<IDBPDatabase> | null = null;
 let storesToEnsure: Record<string, StoreDefinition> = {};
@@ -104,6 +105,35 @@ export async function queryFromDB<T>(
   const tx = db.transaction(storeName, "readonly");
   const store = tx.objectStore(storeName);
   const source = indexName ? store.index(indexName) : store;
+
+  if (filter.type === "contains") {
+    const searchValue = filter.value.toLowerCase();
+    const field = filter.field;
+
+    const results: T[] = [];
+    let cursor = await source.openCursor();
+    while (cursor) {
+      const value = cursor.value as any;
+      let fieldValue: string;
+
+      if (field) {
+        fieldValue = String(value[field] ?? "").toLowerCase();
+      } else if (indexName) {
+        fieldValue = String(cursor.key).toLowerCase();
+      } else {
+        // fallback: intentar usar keyPath principal
+        fieldValue = String(cursor.key).toLowerCase();
+      }
+
+      if (fieldValue.includes(searchValue)) {
+        results.push(cursor.value as T);
+      }
+      cursor = await cursor.continue();
+    }
+
+    await tx.done;
+    return results;
+  }
 
   let range: IDBKeyRange | null = null;
   switch (filter.type) {
