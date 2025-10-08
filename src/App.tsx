@@ -1,10 +1,11 @@
 import { loadPlugin, usePluginRegistry } from "@/plugins/registry";
-import { useUserStore } from "@/store/useAppStore";
+import { useUserStore } from "@/store/useStore";
 import "@/styles/App.css";
 import { connect, StringCodec } from "nats.ws";
 import React, { useEffect, useState } from "react";
 import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
-import { useDealStore } from "./store/dealAppStore";
+import { useDealStore } from "./store/dealStore";
+import Typeahead from "./store/typeHead";
 
 function PluginRoutes() {
   const { plugins } = usePluginRegistry();
@@ -74,6 +75,14 @@ function PluginsLoader() {
 
   return null; // no renderiza nada, solo registra plugins
 }
+
+const OPTIONS = [
+  { id: 1, label: "Colombia" },
+  { id: 2, label: "Argentina" },
+  { id: 3, label: "Chile" },
+  { id: 4, label: "México" },
+  { id: 5, label: "Perú" },
+];
 
 function App() {
   const { getComponentByTag } = usePluginRegistry();
@@ -287,8 +296,21 @@ function Deal() {
     }
   };
 
+  const handleSelect = (option: { id: number; label: string }) => {
+    console.log("Seleccionado:", option);
+  };
+
   return (
     <div className="p-4 max-w-2xl mx-auto">
+      <div style={{ padding: "2rem" }}>
+        <h2>Ejemplo Typeahead en React + TS</h2>
+        <Typeahead
+          fetchUrl="http://localhost:3000/api/countries"
+          placeholder="Busca un país..."
+          onSelect={handleSelect}
+        />
+      </div>
+
       <div className="p-4">
         <h1 className="text-xl font-bold">Zustand + IndexedDB (Auto)</h1>
 
