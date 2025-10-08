@@ -107,15 +107,6 @@ function App() {
     // initWs();
   }, []);
 
-  const handleSetUser = async () => {
-    await setUser("César", "cesar@cesar.com");
-    // await setUser("César", "cesar@galvis.com");
-  };
-
-  const handleClearUsers = async () => {
-    await clearUsers();
-  };
-
   return (
     <BrowserRouter>
       <PluginsLoader />
@@ -127,7 +118,9 @@ function App() {
 
         <button
           className="px-4 py-2 bg-blue-500 text-white rounded mr-2"
-          onClick={() => setUser("César", `cesar${users.length}@example.com`)}
+          onClick={() =>
+            setUser("", "César", `cesar${users.length}@example.com`)
+          }
         >
           Añadir usuario
         </button>

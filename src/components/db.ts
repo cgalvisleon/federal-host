@@ -1,7 +1,8 @@
+import { enviroment } from "@/components/enviroment";
 import { openDB, type IDBPDatabase } from "idb";
 
-const DB_NAME = "myAppDB";
-const DB_VERSION = 1;
+const DB_NAME = enviroment.DbName;
+const DB_VERSION = enviroment.DbVersion;
 
 interface StoreDefinition {
   keyPath: string;
@@ -10,10 +11,10 @@ interface StoreDefinition {
 }
 
 type QueryFilter =
-  | { type: "exact"; value: any }
+  | { type: "eq"; value: any }
   | { type: "prefix"; value: string }
-  | { type: "gte" | "lte" | "gt" | "lt"; value: any }
-  | { type: "contains"; value: string; field?: string };
+  | { type: "moreEq" | "lessEq" | "more" | "less"; value: any }
+  | { type: "like"; value: string; field?: string };
 
 let dbPromise: Promise<IDBPDatabase> | null = null;
 let storesToEnsure: Record<string, StoreDefinition> = {};
@@ -106,7 +107,7 @@ export async function queryFromDB<T>(
   const store = tx.objectStore(storeName);
   const source = indexName ? store.index(indexName) : store;
 
-  if (filter.type === "contains") {
+  if (filter.type === "like") {
     const searchValue = filter.value.toLowerCase();
     const field = filter.field;
 
@@ -137,7 +138,7 @@ export async function queryFromDB<T>(
 
   let range: IDBKeyRange | null = null;
   switch (filter.type) {
-    case "exact":
+    case "eq":
       range = IDBKeyRange.only(filter.value);
       break;
     case "prefix": {
@@ -146,16 +147,16 @@ export async function queryFromDB<T>(
       range = IDBKeyRange.bound(lower, upper);
       break;
     }
-    case "gte":
+    case "moreEq":
       range = IDBKeyRange.lowerBound(filter.value);
       break;
-    case "lte":
+    case "lessEq":
       range = IDBKeyRange.upperBound(filter.value);
       break;
-    case "gt":
+    case "more":
       range = IDBKeyRange.lowerBound(filter.value, true);
       break;
-    case "lt":
+    case "less":
       range = IDBKeyRange.upperBound(filter.value, true);
       break;
   }
