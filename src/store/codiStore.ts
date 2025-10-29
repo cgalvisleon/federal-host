@@ -1,4 +1,4 @@
-import { ensureStore, queryFromDB } from "@/components/db";
+import { ensureStore, queryFromDB } from "@/components/indexDB";
 import { create } from "zustand";
 
 export interface Codi {

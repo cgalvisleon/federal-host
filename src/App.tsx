@@ -5,7 +5,7 @@ import { connect, StringCodec } from "nats.ws";
 import React, { useEffect, useState } from "react";
 import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
 import { useDealStore } from "./store/dealStore";
-import Typeahead from "./store/typeHead";
+import Typeahead from "./components/typeHead";
 
 function PluginRoutes() {
   const { plugins } = usePluginRegistry();

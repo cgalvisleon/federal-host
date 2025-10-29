@@ -5,7 +5,7 @@ import {
   getFromDB,
   queryFromDB,
   setToDB,
-} from "@/components/db";
+} from "@/components/indexDB";
 import type { FC } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { create } from "zustand";

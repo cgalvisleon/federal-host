@@ -5,7 +5,7 @@ import {
   getFromDB,
   queryFromDB,
   setToDB,
-} from "@/components/db";
+} from "@/components/indexDB";
 import { v4 as uuidv4 } from "uuid";
 import { create } from "zustand";
 
