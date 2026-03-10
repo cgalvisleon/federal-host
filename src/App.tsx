@@ -4,8 +4,8 @@ import "@/styles/App.css";
 import { connect, StringCodec } from "nats.ws";
 import React, { useEffect, useState } from "react";
 import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
-import { useDealStore } from "./store/dealStore";
 import Typeahead from "./components/typeHead";
+import { useDealStore } from "./store/dealStore";
 
 function PluginRoutes() {
   const { plugins } = usePluginRegistry();
@@ -116,12 +116,16 @@ function App() {
     // initWs();
   }, []);
 
+  const handleClick = () => {
+    console.log("Button clicked from host!");
+  };
+
   return (
     <BrowserRouter>
       <PluginsLoader />
       <Navigation />
       <PluginRoutes />
-      <Hello />
+      <Hello message="Hola desde el host" count={1} onClick={handleClick} />
       <User />
       <Deal />
       <div>
